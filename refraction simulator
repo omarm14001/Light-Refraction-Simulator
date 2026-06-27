@@ -1,0 +1,190 @@
+import turtle
+import math
+import tkinter as tk
+
+# INPUTS
+root = tk.Tk()
+root.title("Simulation Inputs")
+
+tk.Label(root, text="Enter the refractive index of the first medium (n1):").pack(pady=(10, 0))
+entry_n1 = tk.Entry(root)
+entry_n1.pack()
+entry_n1.insert(0, "1")
+
+tk.Label(root, text="Enter the refractive index of the second medium (n2):").pack(pady=(10, 0))
+entry_n2 = tk.Entry(root)
+entry_n2.pack()
+entry_n2.insert(0, "1.5")
+
+
+def start():
+    global n1, n2
+    n1 = float(entry_n1.get())
+    n2 = float(entry_n2.get())
+    root.destroy()
+
+tk.Button(root, text="Start", command=start).pack(pady=10)
+
+root.mainloop()
+
+
+wn = turtle.Screen()
+wn.bgcolor("white")
+wn.setup(width=1000, height=700)
+
+# makes drawing smooth and instant
+wn.tracer(0)
+
+# VARIABLES 
+
+box_x = -300
+surface_x = 200
+
+x_long = surface_x - box_x
+
+light_angle = 0
+
+up_pressed = False
+down_pressed = False
+
+# SURFACE
+
+surface = turtle.Turtle()
+surface.hideturtle()
+surface.penup()
+surface.goto(surface_x, -800)
+surface.pendown()
+surface.setheading(90)
+surface.pensize(5)
+surface.color("gray")
+surface.forward(1800)
+
+# LIGHT SOURCE
+
+box = turtle.Turtle()
+box.shape("turtle")
+box.color("black")
+box.penup()
+box.goto(box_x, 0)
+
+# INCIDENT RAY
+
+light = turtle.Turtle()
+light.hideturtle()
+light.speed(0)
+light.pensize(3)
+light.color("red")
+
+# RESULT RAY
+
+light2 = turtle.Turtle()
+light2.hideturtle()
+light2.speed(0)
+light2.pensize(3)
+light2.color("blue")
+
+# DRAW FUNCTIONS
+
+def draw_incident_ray():
+    light.clear()
+
+    light.penup()
+    light.goto(box_x, 0)
+
+    light.setheading(light_angle)
+
+    light.pendown()
+
+    dx = x_long
+    dy = math.tan(math.radians(light_angle)) * dx
+
+    length = math.sqrt(dx**2 + dy**2)
+
+    light.forward(length)
+
+
+def draw_result_ray():
+    light2.clear()
+
+    hit_x = light.xcor()
+    hit_y = light.ycor()
+
+    light2.penup()
+    light2.goto(hit_x, hit_y)
+    light2.pendown()
+
+    # Total Internal Reflection
+    if n1 > n2:
+
+        critical_angle = math.degrees(math.asin(n2 / n1))
+
+        if abs(light_angle) > critical_angle:
+
+            light2.setheading(180 - light_angle)
+            light2.forward(1000)
+
+            return
+
+    # Refraction
+    sin_theta2 = (n1 * math.sin(math.radians(light_angle))) / n2
+
+    # safety clamp
+    sin_theta2 = max(-1, min(1, sin_theta2))
+
+    theta2 = math.degrees(math.asin(sin_theta2))
+
+    light2.setheading(theta2)
+    light2.forward(1000)
+
+# UPDATE LOOP
+
+def update():
+
+    global light_angle
+
+    if up_pressed and light_angle < 89:
+        light_angle += 0.5
+
+    if down_pressed and light_angle > -89:
+        light_angle -= 0.5
+
+    draw_incident_ray()
+    draw_result_ray()
+
+    wn.update()
+
+    wn.ontimer(update, 16)
+
+# KEYBOARD
+
+def press_up():
+    global up_pressed
+    up_pressed = True
+
+def release_up():
+    global up_pressed
+    up_pressed = False
+
+def press_down():
+    global down_pressed
+    down_pressed = True
+
+def release_down():
+    global down_pressed
+    down_pressed = False
+
+# KEY BINDINGS
+
+wn.listen()
+
+wn.onkeypress(press_up, "w")
+wn.onkeyrelease(release_up, "w")
+
+wn.onkeypress(press_down, "s")
+wn.onkeyrelease(release_down, "s")
+
+# START
+
+update()
+
+turtle.done()
